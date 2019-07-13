@@ -1,0 +1,30 @@
+{
+    "name": "anfly0/github-webhook-auth",
+    "description": "PSR-15 middleware for authenticating incoming webhooks from github",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Viktor Hellström",
+            "email": "anfly0@gmail.com"
+        }
+    ],
+    
+    "require": {
+        "psr/http-server-middleware": "^1.0",
+        "psr/log": "^1.1"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^8",
+        "slim/psr7": "^0.3.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Anfly0\\Middleware\\GitHub\\": "src"
+    }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Anfly0\\Middleware\\GitHub\\tests\\": "tests"
+        }
+    }
+}
