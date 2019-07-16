@@ -16,13 +16,12 @@ use Slim\Psr7\Factory\ResponseFactory;
  */
 class GithubWebHookAuthTest extends TestCase
 {
+    const SECRET = 'THIS_IS_A_SECRET';
+
     protected $authenticator;
-    protected $mockRequest;
+    protected $mockRequestFactory;
     protected $mockHandler;
-    protected $secret;
-    protected $messageBody;
     protected $responseFactory;
-    protected $signature;
 
     /**
      * Undocumented function
@@ -32,21 +31,17 @@ class GithubWebHookAuthTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->secret = 'THIS_IS_A_TEST';
-        $this->messageBody = 'THIS_IS_A_TEST_BODY';
-        $this->signature = 'sha1=90502e8291a3e67eb88d722f3590aee599f73a27';
         $this->responseFactory = new ResponseFactory();
-        $this->authenticator = new Auth($this->secret, $this->responseFactory);
-        $this->mockRequest = $this->createMock(ServerRequestInterface::class);
+        $this->authenticator = new Auth(self::SECRET, $this->responseFactory);
         $this->mockHandler = $this->createMock(RequestHandlerInterface::class);
-        $this->responseFactory = new ResponseFactory();
+        $this->mockRequestFactory = new GithubRequestMockFactory(self::SECRET);
+                                      
     }
     
     protected function tearDown(): void
     {
         parent::tearDown();
         unset($this->authenticator);
-        unset($this->mockRequest);
     }
     
 
@@ -55,22 +50,15 @@ class GithubWebHookAuthTest extends TestCase
     {
         $this->assertInstanceOf(
             MiddlewareInterface::class,
-            new Auth($this->secret, $this->responseFactory)
+            new Auth(self::SECRET, $this->responseFactory)
         );
     }
     
     /** @test */
     public function testResponseMissingSignature()
     {
-        $this->mockRequest->method('hasHeader')
-            ->with('X-Hub-Signature')
-            ->willReturn(false);
-
-        $this->mockRequest->method('getHeader')
-            ->with('X-Hub-Signature')
-            ->willReturn(array());
-        
-        $result = $this->authenticator->process($this->mockRequest, $this->mockHandler);
+        $request = $this->mockRequestFactory->createMissingHeaderRequest();
+        $result = $this->authenticator->process($request, $this->mockHandler);
 
         $this->assertEquals(400, $result->getStatusCode());
         $this->assertEquals('Bad Request', $result->getReasonPhrase());
@@ -78,18 +66,8 @@ class GithubWebHookAuthTest extends TestCase
 
     public function testResponseIncorrectSignature()
     {
-        $this->mockRequest->method('hasHeader')
-            ->with('X-Hub-Signature')
-            ->willReturn(true);
-
-        $this->mockRequest->method('getHeader')
-            ->with('X-Hub-Signature')
-            ->willReturn(array('sha1=90502e8291a3e67eb88d722f3590aee599f73a28'));
-        
-        $this->mockRequest->method('getBody')
-            ->willReturn($this->messageBody);
-        
-        $result = $this->authenticator->process($this->mockRequest, $this->mockHandler);
+        $request = $this->mockRequestFactory->createUnauthenticRequest();
+        $result = $this->authenticator->process($request, $this->mockHandler);
 
         $this->assertEquals(401, $result->getStatusCode());
         $this->assertEquals('Unauthorized', $result->getReasonPhrase());
@@ -97,21 +75,12 @@ class GithubWebHookAuthTest extends TestCase
 
     public function test202ResponseFromHandlerCorrectSignature()
     {
-        $this->mockRequest->method('hasHeader')
-            ->with('X-Hub-Signature')
-            ->willReturn(true);
-
-        $this->mockRequest->method('getHeader')
-            ->with('X-Hub-Signature')
-            ->willReturn(array($this->signature));
-
-        $this->mockRequest->method('getBody')
-            ->willReturn($this->messageBody);
-
+        $request = $this->mockRequestFactory->createAuthenticRequest();
+       
         $this->mockHandler->method('handle')
             ->willReturn($this->responseFactory->createResponse(202));
         
-        $result = $this->authenticator->process($this->mockRequest, $this->mockHandler);
+        $result = $this->authenticator->process($request, $this->mockHandler);
 
         $this->assertEquals(202, $result->getStatusCode());
         $this->assertEquals('Accepted', $result->getReasonPhrase());
@@ -119,21 +88,12 @@ class GithubWebHookAuthTest extends TestCase
 
     public function test201ResponseFromHandlerCorrectSignature()
     {
-        $this->mockRequest->method('hasHeader')
-            ->with('X-Hub-Signature')
-            ->willReturn(true);
-
-        $this->mockRequest->method('getHeader')
-            ->with('X-Hub-Signature')
-            ->willReturn(array($this->signature));
-
-        $this->mockRequest->method('getBody')
-            ->willReturn($this->messageBody);
+        $request = $this->mockRequestFactory->createAuthenticRequest();
 
         $this->mockHandler->method('handle')
             ->willReturn($this->responseFactory->createResponse(201));
         
-        $result = $this->authenticator->process($this->mockRequest, $this->mockHandler);
+        $result = $this->authenticator->process($request, $this->mockHandler);
 
         $this->assertEquals(201, $result->getStatusCode());
         $this->assertEquals('Created', $result->getReasonPhrase());
