@@ -10,7 +10,7 @@ use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 use Slim\Psr7\Factory\ResponseFactory;
 
-class GithubWebHookAuthTest extends TestCase
+class AuthTest extends TestCase
 {
     const SECRET = 'THIS_IS_A_SECRET';
 
