@@ -29,6 +29,9 @@ use Psr\Log\NullLogger;
  */
 class Auth implements MiddlewareInterface, LoggerAwareInterface
 {
+    const LOG_MSG_MISSING_HEADER = 'Authentication failed, X-hub-Signature missing';
+    const LOG_MSG_SIGNATURE_NOT_MATCHING = 'Authentication failed, signature did not mach';
+    const LOG_MSG_SUCCESS = 'Authentication successful';
     /**
      * Trait that implements the methods required to implement the LoggerAwareInterface
      */
@@ -60,18 +63,18 @@ class Auth implements MiddlewareInterface, LoggerAwareInterface
         }
 
         if (!$request->hasHeader(self::SIGNATURE_NAME)) {
-            $this->logger->warning("Tried to authenticate github webhook, but the signature header was missing.");
+            $this->logger->warning(self::LOG_MSG_MISSING_HEADER);
             return $this->responseFactory->createResponse(400);
         }
 
         $signature = $this->getSignature($this->secret, $request->getBody());
         
         if (!hash_equals($request->getHeader(self::SIGNATURE_NAME)[0], $signature)) {
-            $this->logger->warning("Tried to authenticate github webhook, but the signature did not match.");
+            $this->logger->warning(self::LOG_MSG_SIGNATURE_NOT_MATCHING);
             return $this->responseFactory->createResponse(401);
         }
 
-        $this->logger->info("github webhook authenticated OK");
+        $this->logger->info(self::LOG_MSG_SUCCESS);
         return $handler->handle($request);
     }
 

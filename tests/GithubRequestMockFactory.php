@@ -5,7 +5,7 @@ namespace Anfly0\Middleware\GitHub\tests;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\ServerRequestInterface;
 
-class GithubRequestMockFactory extends  TestCase
+class GithubRequestMockFactory extends TestCase
 {
     const BODY_DATA = '{"array":[1,2,3],"boolean":true,"color":"#82b92c","null":null,"number":123,"object":{"a":"b","c":"d","e":"f"},"string":"Hello World"}';
     const ALG = 'sha1';
@@ -16,13 +16,14 @@ class GithubRequestMockFactory extends  TestCase
     protected $baseMock;
     protected $secret;
 
-    public function __construct(string $secret) {
+    public function __construct(string $secret)
+    {
         $this->correctHash = hash_hmac(self::ALG, self::BODY_DATA, $secret);
         $this->baseMock = $this->getMockBuilder(ServerRequestInterface::class)
                                ->setMethods(['hasHeader', 'getHeader', 'getBody'])
                                ->getMockForAbstractClass();
 
-        $this->secret = $secret; 
+        $this->secret = $secret;
     }
 
     public function createBaseRequestMock()

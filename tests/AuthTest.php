@@ -9,43 +9,39 @@ use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 use Slim\Psr7\Factory\ResponseFactory;
+use Monolog\Logger;
+use Monolog\Handler\StreamHandler;
 
-
-/**
- * Undocumented class
- */
-class GithubWebHookAuthTest extends TestCase
+class AuthTest extends TestCase
 {
     const SECRET = 'THIS_IS_A_SECRET';
+    const LOGGER_CHANNEL_NAME = 'Unit-test-logger';
 
     protected $authenticator;
     protected $mockRequestFactory;
     protected $mockHandler;
     protected $responseFactory;
+    protected $logFile;
+    protected $logger;
 
-    /**
-     * Undocumented function
-     *
-     * @return void
-     */
     protected function setUp(): void
     {
         parent::setUp();
         $this->responseFactory = new ResponseFactory();
         $this->authenticator = new Auth(self::SECRET, $this->responseFactory);
+        $this->logFile = fopen('php://memory', 'rw');
+        $this->logger = new Logger(self::LOGGER_CHANNEL_NAME);
+        
         $this->mockHandler = $this->createMock(RequestHandlerInterface::class);
         $this->mockRequestFactory = new GithubRequestMockFactory(self::SECRET);
-                                      
     }
     
     protected function tearDown(): void
     {
         parent::tearDown();
-        unset($this->authenticator);
+        fclose($this->logFile);
     }
     
-
-    /** @test */
     public function testExtendsPsr15Interface()
     {
         $this->assertInstanceOf(
@@ -53,8 +49,6 @@ class GithubWebHookAuthTest extends TestCase
             new Auth(self::SECRET, $this->responseFactory)
         );
     }
-    
-    /** @test */
     public function testResponseMissingSignature()
     {
         $request = $this->mockRequestFactory->createMissingHeaderRequest();
@@ -97,5 +91,47 @@ class GithubWebHookAuthTest extends TestCase
 
         $this->assertEquals(201, $result->getStatusCode());
         $this->assertEquals('Created', $result->getReasonPhrase());
+    }
+
+    public function testLoggingOfMissingHeader()
+    {
+        $this->logger->pushHandler(new StreamHandler($this->logFile, Logger::DEBUG));
+        $this->authenticator->setLogger($this->logger);
+
+        $request = $this->mockRequestFactory->createMissingHeaderRequest();
+        $result = $this->authenticator->process($request, $this->mockHandler);
+
+        rewind($this->logFile);
+        $logLine = stream_get_line($this->logFile, 4096);
+        $expected = self::LOGGER_CHANNEL_NAME . '.WARNING: ' . Auth::LOG_MSG_MISSING_HEADER;
+        $this->assertStringContainsString($expected, $logLine);
+    }
+
+    public function testLoggingOfFailedAuthentication()
+    {
+        $this->logger->pushHandler(new StreamHandler($this->logFile, Logger::DEBUG));
+        $this->authenticator->setLogger($this->logger);
+
+        $request = $this->mockRequestFactory->createUnauthenticRequest();
+        $result = $this->authenticator->process($request, $this->mockHandler);
+
+        rewind($this->logFile);
+        $logLine = stream_get_line($this->logFile, 4096);
+        $expected = self::LOGGER_CHANNEL_NAME . '.WARNING: ' . Auth::LOG_MSG_SIGNATURE_NOT_MATCHING;
+        $this->assertStringContainsString($expected, $logLine);
+    }
+
+    public function testLoggingOfSuccessfulAuthentication()
+    {
+        $this->logger->pushHandler(new StreamHandler($this->logFile, Logger::DEBUG));
+        $this->authenticator->setLogger($this->logger);
+
+        $request = $this->mockRequestFactory->createAuthenticRequest();
+        $result = $this->authenticator->process($request, $this->mockHandler);
+
+        rewind($this->logFile);
+        $logLine = stream_get_line($this->logFile, 4096);
+        $expected = self::LOGGER_CHANNEL_NAME . '.INFO: ' . Auth::LOG_MSG_SUCCESS;
+        $this->assertStringContainsString($expected, $logLine);
     }
 }
