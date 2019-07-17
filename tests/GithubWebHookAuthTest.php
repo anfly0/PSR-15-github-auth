@@ -10,10 +10,6 @@ use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 use Slim\Psr7\Factory\ResponseFactory;
 
-
-/**
- * Undocumented class
- */
 class GithubWebHookAuthTest extends TestCase
 {
     const SECRET = 'THIS_IS_A_SECRET';
@@ -23,11 +19,6 @@ class GithubWebHookAuthTest extends TestCase
     protected $mockHandler;
     protected $responseFactory;
 
-    /**
-     * Undocumented function
-     *
-     * @return void
-     */
     protected function setUp(): void
     {
         parent::setUp();
@@ -44,8 +35,6 @@ class GithubWebHookAuthTest extends TestCase
         unset($this->authenticator);
     }
     
-
-    /** @test */
     public function testExtendsPsr15Interface()
     {
         $this->assertInstanceOf(
@@ -53,8 +42,6 @@ class GithubWebHookAuthTest extends TestCase
             new Auth(self::SECRET, $this->responseFactory)
         );
     }
-    
-    /** @test */
     public function testResponseMissingSignature()
     {
         $request = $this->mockRequestFactory->createMissingHeaderRequest();
