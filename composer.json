@@ -1,5 +1,5 @@
 {
-    "name": "anfly0/github-webhook-auth",
+    "name": "anfly0/PSR-15-github-auth",
     "description": "PSR-15 middleware for authenticating incoming webhooks from github",
     "license": "MIT",
     "authors": [
