@@ -15,6 +15,7 @@ $ composer require anfly0/psr15-github-auth
 composer require anfly0/psr15-github-auth
 composer require slim/slim ^4.0.0-beta
 composer require slim/psr7
+composer require monolog/monolog
 ``` 
 ```php
 <?php
