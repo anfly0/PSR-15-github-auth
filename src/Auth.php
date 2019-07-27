@@ -48,8 +48,8 @@ class Auth implements MiddlewareInterface, LoggerAwareInterface
      * @var string The secret used to calculate the expected signature.
      */
     private $secret;
-    
-    /**
+
+    /** 
      * __construct
      *
      * @param  string $secret The secret used to authenticate the incoming webhook.
@@ -62,15 +62,11 @@ class Auth implements MiddlewareInterface, LoggerAwareInterface
     {
         $this->responseFactory = $responseFactory;
         $this->secret = $secret;
-        $this->logger = null;
+        $this->logger = new NullLogger();
     }
 
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
-        if ($this->logger === null) {
-            $this->logger = new NullLogger();
-        }
-
         if (!$request->hasHeader(self::SIGNATURE_NAME)) {
             $this->logger->warning(self::LOG_MSG_MISSING_HEADER);
             return $this->responseFactory->createResponse(400);
