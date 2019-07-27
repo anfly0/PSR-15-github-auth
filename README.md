@@ -6,13 +6,13 @@
 ## Installation
 
 ```shell
-$ composer require anfly0/psr15-github-auth
+$ composer require anfly0/psr-15-github-auth
 ```
 ---
 ## Example
 ### Install dependencies for the following example:
 ```Shell
-composer require anfly0/psr15-github-auth
+composer require anfly0/psr-15-github-auth
 composer require slim/slim ^4.0.0-beta
 composer require slim/psr7
 composer require monolog/monolog
