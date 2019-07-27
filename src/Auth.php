@@ -49,6 +49,15 @@ class Auth implements MiddlewareInterface, LoggerAwareInterface
      */
     private $secret;
     
+    /**
+     * __construct
+     *
+     * @param  string $secret The secret used to authenticate the incoming webhook.
+     * This should match the secret used to setup the webhook at Github.
+     * @param  ResponseFactoryInterface $responseFactory This factory will be used to create the response object if authentication fails.
+     *
+     * @return void
+     */
     public function __construct(string $secret, ResponseFactoryInterface $responseFactory)
     {
         $this->responseFactory = $responseFactory;
