@@ -1,5 +1,6 @@
 # GitHub webhook authentication middleware. 
-
+[![License](https://img.shields.io/github/license/anfly0/PSR-15-github-auth)](https://badges.mit-license.org)
+[![Build Status](https://travis-ci.com/anfly0/PSR-15-github-auth.svg?branch=master)](https://travis-ci.com/anfly0/PSR-15-github-auth)
 > Simple PSR-15 middleware for authenticating GitHub webhooks.
 ---
 
@@ -83,7 +84,7 @@ $app->run();
 
 ## License
 
-[![License](http://img.shields.io/:license-mit-blue.svg?style=flat-square)](http://badges.mit-license.org)
+
 
 - **[MIT license](http://opensource.org/licenses/mit-license.php)**
 - Copyright 2019 © Viktor Hellström
