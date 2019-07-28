@@ -1,7 +1,7 @@
 language: php
 
 php:
-  - nighty
+  - nightly
 
 install:
   - composer install
