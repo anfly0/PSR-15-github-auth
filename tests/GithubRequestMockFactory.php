@@ -15,6 +15,7 @@ class GithubRequestMockFactory extends TestCase
     protected $wrongHash = '90502e8291a3e67eb88d722f3590aee599f73a27';
     protected $baseMock;
     protected $secret;
+    protected $streamFactory;
 
     public function __construct(string $secret)
     {
@@ -24,6 +25,7 @@ class GithubRequestMockFactory extends TestCase
                                ->getMockForAbstractClass();
 
         $this->secret = $secret;
+        $this->streamFactory = new StreamMockFactory();
     }
 
     public function createBaseRequestMock()
@@ -44,7 +46,7 @@ class GithubRequestMockFactory extends TestCase
             ->willReturn(array('sha1=' . $this->correctHash));
 
         $mock->method('getBody')
-            ->willReturn(self::BODY_DATA);
+            ->willReturn($this->streamFactory->createSeekableStream());
 
         return $mock;
     }
@@ -62,7 +64,7 @@ class GithubRequestMockFactory extends TestCase
             ->willReturn(array('sha1=' . $this->wrongHash));
 
         $mock->method('getBody')
-            ->willReturn(self::BODY_DATA);
+            ->willReturn($this->streamFactory->createSeekableStream());
 
         return $mock;
     }
@@ -80,7 +82,7 @@ class GithubRequestMockFactory extends TestCase
             ->willReturn(array());
 
         $mock->method('getBody')
-            ->willReturn(self::BODY_DATA);
+            ->willReturn($this->streamFactory->createSeekableStream());
 
         return $mock;
     }
