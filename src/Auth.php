@@ -13,7 +13,6 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Log\LoggerAwareInterface;
-use Psr\Log\LoggerInterface;
 use Psr\Log\LoggerAwareTrait;
 use Psr\Log\NullLogger;
 
@@ -29,8 +28,8 @@ use Psr\Log\NullLogger;
  */
 class Auth implements MiddlewareInterface, LoggerAwareInterface
 {
-    const LOG_MSG_MISSING_HEADER = 'Authentication failed, X-hub-Signature missing';
-    const LOG_MSG_SIGNATURE_NOT_MATCHING = 'Authentication failed, signature did not mach';
+    const LOG_MSG_MISSING_HEADER = 'Authentication failed, X-Hub-Signature missing';
+    const LOG_MSG_SIGNATURE_NOT_MATCHING = 'Authentication failed, signature did not match';
     const LOG_MSG_SUCCESS = 'Authentication successful';
     /**
      * Trait that implements the methods required to implement the LoggerAwareInterface
