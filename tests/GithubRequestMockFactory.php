@@ -2,10 +2,7 @@
 
 namespace Anfly0\Middleware\GitHub\tests;
 
-use PHPUnit\Framework\TestCase;
-use Psr\Http\Message\ServerRequestInterface;
-
-class GithubRequestMockFactory extends TestCase
+class GithubRequestMockFactory
 {
     const BODY_DATA = '{"array":[1,2,3],"boolean":true,"color":"#82b92c","null":null,"number":123,"object":{"a":"b","c":"d","e":"f"},"string":"Hello World"}';
     const ALG = 'sha1';
@@ -20,10 +17,8 @@ class GithubRequestMockFactory extends TestCase
     public function __construct(string $secret)
     {
         $this->correctHash = hash_hmac(self::ALG, self::BODY_DATA, $secret);
-        $this->baseMock = $this->getMockBuilder(ServerRequestInterface::class)
-                               ->setMethods(['hasHeader', 'getHeader', 'getBody'])
-                               ->getMockForAbstractClass();
-
+        $psr17Factory = new \Nyholm\Psr7\Factory\Psr17Factory();
+        $this->baseMock = $psr17Factory->createServerRequest('POST', 'localhost/');
         $this->secret = $secret;
         $this->streamFactory = new StreamMockFactory();
     }
@@ -36,54 +31,23 @@ class GithubRequestMockFactory extends TestCase
     public function createAuthenticRequest()
     {
         $mock = clone $this->baseMock;
-
-        $mock->method('hasHeader')
-            ->with(self::HEADER_NAME)
-            ->willReturn(true);
-
-        $mock->method('getHeader')
-            ->with(self::HEADER_NAME)
-            ->willReturn(array('sha1=' . $this->correctHash));
-
-        $mock->method('getBody')
-            ->willReturn($this->streamFactory->createSeekableStream());
-
+        $mock = $mock->withHeader(self::HEADER_NAME, 'sha1=' . $this->correctHash);
+        $mock = $mock->withBody($this->streamFactory->createSeekableStream());
         return $mock;
     }
 
     public function createUnauthenticRequest()
     {
         $mock = clone $this->baseMock;
-
-        $mock->method('hasHeader')
-            ->with(self::HEADER_NAME)
-            ->willReturn(true);
-
-        $mock->method('getHeader')
-            ->with(self::HEADER_NAME)
-            ->willReturn(array('sha1=' . $this->wrongHash));
-
-        $mock->method('getBody')
-            ->willReturn($this->streamFactory->createSeekableStream());
-
+        $mock = $mock->withHeader(self::HEADER_NAME, 'sha1=' . $this->wrongHash);
+        $mock = $mock->withBody($this->streamFactory->createSeekableStream());
         return $mock;
     }
 
     public function createMissingHeaderRequest()
     {
         $mock = clone $this->baseMock;
-
-        $mock->method('hasHeader')
-            ->with(self::HEADER_NAME)
-            ->willReturn(false);
-
-        $mock->method('getHeader')
-            ->with(self::HEADER_NAME)
-            ->willReturn(array());
-
-        $mock->method('getBody')
-            ->willReturn($this->streamFactory->createSeekableStream());
-
+        $mock = $mock->withBody($this->streamFactory->createSeekableStream());
         return $mock;
     }
 }
