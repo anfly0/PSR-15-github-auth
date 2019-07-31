@@ -8,7 +8,7 @@ use PHPUnit\Framework\TestCase;
 use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\RequestHandlerInterface;
-use Slim\Psr7\Factory\ResponseFactory;
+use \Nyholm\Psr7\Factory\Psr17Factory;
 use Monolog\Logger;
 use Monolog\Handler\StreamHandler;
 
@@ -27,7 +27,7 @@ class AuthTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->responseFactory = new ResponseFactory();
+        $this->responseFactory = new Psr17Factory();
         $this->authenticator = new Auth(self::SECRET, $this->responseFactory);
         $this->logFile = fopen('php://memory', 'rw');
         $this->logger = new Logger(self::LOGGER_CHANNEL_NAME);
@@ -72,7 +72,7 @@ class AuthTest extends TestCase
         $request = $this->mockRequestFactory->createAuthenticRequest();
        
         $this->mockHandler->method('handle')
-            ->willReturn($this->responseFactory->createResponse(202));
+            ->willReturn($this->responseFactory->createResponse(202, 'Accepted'));
         
         $result = $this->authenticator->process($request, $this->mockHandler);
 
@@ -85,7 +85,7 @@ class AuthTest extends TestCase
         $request = $this->mockRequestFactory->createAuthenticRequest();
 
         $this->mockHandler->method('handle')
-            ->willReturn($this->responseFactory->createResponse(201));
+            ->willReturn($this->responseFactory->createResponse(201, 'Created'));
         
         $result = $this->authenticator->process($request, $this->mockHandler);
 
