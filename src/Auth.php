@@ -48,7 +48,7 @@ class Auth implements MiddlewareInterface, LoggerAwareInterface
      */
     private $secret;
 
-    /** 
+    /**
      * __construct
      *
      * @param  string $secret The secret used to authenticate the incoming webhook.
@@ -68,14 +68,14 @@ class Auth implements MiddlewareInterface, LoggerAwareInterface
     {
         if (!$request->hasHeader(self::SIGNATURE_NAME)) {
             $this->logger->warning(self::LOG_MSG_MISSING_HEADER);
-            return $this->responseFactory->createResponse(400);
+            return $this->responseFactory->createResponse(400, 'Bad Request');
         }
 
         $signature = $this->getSignature($this->secret, $request->getBody());
         
         if (!hash_equals($request->getHeader(self::SIGNATURE_NAME)[0], $signature)) {
             $this->logger->warning(self::LOG_MSG_SIGNATURE_NOT_MATCHING);
-            return $this->responseFactory->createResponse(401);
+            return $this->responseFactory->createResponse(401, 'Unauthorized');
         }
 
         $this->logger->info(self::LOG_MSG_SUCCESS);
