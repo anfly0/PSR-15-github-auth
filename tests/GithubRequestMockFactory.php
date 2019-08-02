@@ -36,6 +36,14 @@ class GithubRequestMockFactory
         return $mock;
     }
 
+    public function createAuthenticRequestNotSeekableBody()
+    {
+        $mock = clone $this->baseMock;
+        $mock = $mock->withHeader(self::HEADER_NAME, 'sha1=' . $this->correctHash);
+        $mock = $mock->withBody($this->streamFactory->createNotSeekableStream());
+        return $mock;
+    }
+
     public function createUnauthenticRequest()
     {
         $mock = clone $this->baseMock;
