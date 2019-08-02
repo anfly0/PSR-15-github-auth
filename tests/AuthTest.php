@@ -42,6 +42,15 @@ class AuthTest extends TestCase
         fclose($this->logFile);
     }
     
+    public static function serverRequestProvider()
+    {
+        $mockRequestFactory = new GithubRequestMockFactory(self::SECRET);
+        return [
+            [$mockRequestFactory->createAuthenticRequest()],
+            [$mockRequestFactory->createAuthenticRequestNotSeekableBody()]
+        ];
+    }
+
     public function testExtendsPsr15Interface()
     {
         $this->assertInstanceOf(
@@ -133,5 +142,47 @@ class AuthTest extends TestCase
         $logLine = stream_get_line($this->logFile, 4096);
         $expected = self::LOGGER_CHANNEL_NAME . '.INFO: ' . Auth::LOG_MSG_SUCCESS;
         $this->assertStringContainsString($expected, $logLine);
+    }
+
+    /**
+     * @dataProvider serverRequestProvider
+     */
+    public function testRequestBodyIsPassedToHandlerIsSeekable($request)
+    {
+        $this->mockHandler->expects($this->atLeastOnce())
+                        ->method('handle')
+                        ->with($this->callback(function ($handlerRequest) {
+                            return $handlerRequest->getBody()->isSeekable();
+                        }));
+        
+        $this->authenticator->process($request, $this->mockHandler);
+    }
+
+    /**
+     * @dataProvider serverRequestProvider
+     */
+    public function testRequestBodyIsNotAltered($request)
+    {
+        $this->mockHandler->expects($this->atLeastOnce())
+                        ->method('handle')
+                        ->with($this->callback(function ($handlerRequest) use ($request) {
+                            return (string) $handlerRequest->getBody() == (string) $request->getBody();
+                        }));
+        
+        $this->authenticator->process($request, $this->mockHandler);
+    }
+    
+    /**
+     * @dataProvider serverRequestProvider
+     */
+    public function testRequestBodyIsRewound($request)
+    {
+        $this->mockHandler->expects($this->atLeastOnce())
+                        ->method('handle')
+                        ->with($this->callback(function ($handlerRequest) use ($request) {
+                            return $handlerRequest->getBody()->tell() === 0;
+                        }));
+        
+        $this->authenticator->process($request, $this->mockHandler);
     }
 }
