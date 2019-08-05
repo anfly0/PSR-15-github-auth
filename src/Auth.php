@@ -12,6 +12,7 @@ use Psr\Http\Server\RequestHandlerInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\ResponseFactoryInterface;
+use Psr\Http\Message\StreamFactoryInterface;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerAwareTrait;
 use Psr\Log\NullLogger;
@@ -48,7 +49,9 @@ class Auth implements MiddlewareInterface, LoggerAwareInterface
      */
     private $secret;
 
-    /** 
+    private $streamFactory;
+
+    /**
      * __construct
      *
      * @param  string $secret The secret used to authenticate the incoming webhook.
@@ -57,27 +60,33 @@ class Auth implements MiddlewareInterface, LoggerAwareInterface
      *
      * @return void
      */
-    public function __construct(string $secret, ResponseFactoryInterface $responseFactory)
-    {
+    public function __construct(
+        string $secret,
+        ResponseFactoryInterface $responseFactory,
+        StreamFactoryInterface $streamFactory
+    ) {
         $this->responseFactory = $responseFactory;
         $this->secret = $secret;
         $this->logger = new NullLogger();
+        $this->streamFactory = $streamFactory;
     }
 
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
         if (!$request->hasHeader(self::SIGNATURE_NAME)) {
             $this->logger->warning(self::LOG_MSG_MISSING_HEADER);
-            return $this->responseFactory->createResponse(400);
+            return $this->responseFactory->createResponse(400, 'Bad Request');
         }
 
+        $request = $this->getRequestWithSeekableBody($request);
         $signature = $this->getSignature($this->secret, $request->getBody());
         
         if (!hash_equals($request->getHeader(self::SIGNATURE_NAME)[0], $signature)) {
             $this->logger->warning(self::LOG_MSG_SIGNATURE_NOT_MATCHING);
-            return $this->responseFactory->createResponse(401);
+            return $this->responseFactory->createResponse(401, 'Unauthorized');
         }
 
+        $request->getBody()->rewind();
         $this->logger->info(self::LOG_MSG_SUCCESS);
         return $handler->handle($request);
     }
@@ -85,5 +94,16 @@ class Auth implements MiddlewareInterface, LoggerAwareInterface
     private function getSignature(string $secret, string $body): string
     {
         return 'sha1=' . hash_hmac('sha1', $body, $secret);
+    }
+
+    private function getRequestWithSeekableBody(ServerRequestInterface $request): ServerRequestInterface
+    {
+        if (!$request->getBody()->isSeekable()) {
+            $newStream = $this->streamFactory->createStreamFromFile('php://temp', 'rw');
+            $newStream->write($request->getBody()->read(4096));
+            $newStream->rewind();
+            $request = $request->withBody($newStream);
+        }
+        return $request;
     }
 }

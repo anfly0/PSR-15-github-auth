@@ -8,7 +8,7 @@ use PHPUnit\Framework\TestCase;
 use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\RequestHandlerInterface;
-use Slim\Psr7\Factory\ResponseFactory;
+use \Nyholm\Psr7\Factory\Psr17Factory;
 use Monolog\Logger;
 use Monolog\Handler\StreamHandler;
 
@@ -21,14 +21,16 @@ class AuthTest extends TestCase
     protected $mockRequestFactory;
     protected $mockHandler;
     protected $responseFactory;
+    protected $streamFactory;
     protected $logFile;
     protected $logger;
 
     protected function setUp(): void
     {
         parent::setUp();
-        $this->responseFactory = new ResponseFactory();
-        $this->authenticator = new Auth(self::SECRET, $this->responseFactory);
+        $this->responseFactory = new Psr17Factory();
+        $this->streamFactory = $this->responseFactory;
+        $this->authenticator = new Auth(self::SECRET, $this->responseFactory, $this->streamFactory);
         $this->logFile = fopen('php://memory', 'rw');
         $this->logger = new Logger(self::LOGGER_CHANNEL_NAME);
         
@@ -42,11 +44,20 @@ class AuthTest extends TestCase
         fclose($this->logFile);
     }
     
+    public static function serverRequestProvider()
+    {
+        $mockRequestFactory = new GithubRequestMockFactory(self::SECRET);
+        return [
+            [$mockRequestFactory->createAuthenticRequest()],
+            [$mockRequestFactory->createAuthenticRequestNotSeekableBody()]
+        ];
+    }
+
     public function testExtendsPsr15Interface()
     {
         $this->assertInstanceOf(
             MiddlewareInterface::class,
-            new Auth(self::SECRET, $this->responseFactory)
+            new Auth(self::SECRET, $this->responseFactory, $this->streamFactory)
         );
     }
     public function testResponseMissingSignature()
@@ -72,7 +83,7 @@ class AuthTest extends TestCase
         $request = $this->mockRequestFactory->createAuthenticRequest();
        
         $this->mockHandler->method('handle')
-            ->willReturn($this->responseFactory->createResponse(202));
+            ->willReturn($this->responseFactory->createResponse(202, 'Accepted'));
         
         $result = $this->authenticator->process($request, $this->mockHandler);
 
@@ -85,7 +96,7 @@ class AuthTest extends TestCase
         $request = $this->mockRequestFactory->createAuthenticRequest();
 
         $this->mockHandler->method('handle')
-            ->willReturn($this->responseFactory->createResponse(201));
+            ->willReturn($this->responseFactory->createResponse(201, 'Created'));
         
         $result = $this->authenticator->process($request, $this->mockHandler);
 
@@ -133,5 +144,47 @@ class AuthTest extends TestCase
         $logLine = stream_get_line($this->logFile, 4096);
         $expected = self::LOGGER_CHANNEL_NAME . '.INFO: ' . Auth::LOG_MSG_SUCCESS;
         $this->assertStringContainsString($expected, $logLine);
+    }
+
+    /**
+     * @dataProvider serverRequestProvider
+     */
+    public function testRequestBodyIsPassedToHandlerIsSeekable($request)
+    {
+        $this->mockHandler->expects($this->atLeastOnce())
+                        ->method('handle')
+                        ->with($this->callback(function ($handlerRequest) {
+                            return $handlerRequest->getBody()->isSeekable();
+                        }));
+        
+        $this->authenticator->process($request, $this->mockHandler);
+    }
+
+    /**
+     * @dataProvider serverRequestProvider
+     */
+    public function testRequestBodyIsNotAltered($request)
+    {
+        $this->mockHandler->expects($this->atLeastOnce())
+                        ->method('handle')
+                        ->with($this->callback(function ($handlerRequest) use ($request) {
+                            return (string) $handlerRequest->getBody() == (string) $request->getBody();
+                        }));
+        
+        $this->authenticator->process($request, $this->mockHandler);
+    }
+    
+    /**
+     * @dataProvider serverRequestProvider
+     */
+    public function testRequestBodyIsRewound($request)
+    {
+        $this->mockHandler->expects($this->atLeastOnce())
+                        ->method('handle')
+                        ->with($this->callback(function ($handlerRequest) use ($request) {
+                            return $handlerRequest->getBody()->tell() === 0;
+                        }));
+        
+        $this->authenticator->process($request, $this->mockHandler);
     }
 }
