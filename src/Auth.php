@@ -79,7 +79,6 @@ class Auth implements MiddlewareInterface, LoggerAwareInterface
         }
 
         $request = $this->getRequestWithSeekableBody($request);
-
         $signature = $this->getSignature($this->secret, $request->getBody());
         
         if (!hash_equals($request->getHeader(self::SIGNATURE_NAME)[0], $signature)) {
@@ -87,6 +86,7 @@ class Auth implements MiddlewareInterface, LoggerAwareInterface
             return $this->responseFactory->createResponse(401, 'Unauthorized');
         }
 
+        $request->getBody()->rewind();
         $this->logger->info(self::LOG_MSG_SUCCESS);
         return $handler->handle($request);
     }
@@ -106,5 +106,4 @@ class Auth implements MiddlewareInterface, LoggerAwareInterface
         }
         return $request;
     }
-    
 }
