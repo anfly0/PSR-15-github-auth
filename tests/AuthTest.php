@@ -151,7 +151,6 @@ class AuthTest extends TestCase
      */
     public function testRequestBodyIsPassedToHandlerIsSeekable($request)
     {
-        $this->markTestSkipped('Needs working mock for not seekable body stream');
         $this->mockHandler->expects($this->atLeastOnce())
                         ->method('handle')
                         ->with($this->callback(function ($handlerRequest) {
@@ -166,7 +165,6 @@ class AuthTest extends TestCase
      */
     public function testRequestBodyIsNotAltered($request)
     {
-        $this->markTestSkipped('Needs working mock for not seekable body stream');
         $this->mockHandler->expects($this->atLeastOnce())
                         ->method('handle')
                         ->with($this->callback(function ($handlerRequest) use ($request) {
@@ -181,7 +179,6 @@ class AuthTest extends TestCase
      */
     public function testRequestBodyIsRewound($request)
     {
-        $this->markTestSkipped('Needs working mock for not seekable body stream');
         $this->mockHandler->expects($this->atLeastOnce())
                         ->method('handle')
                         ->with($this->callback(function ($handlerRequest) use ($request) {
