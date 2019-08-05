@@ -43,7 +43,7 @@ $logger->pushHandler(new StreamHandler('./example.log', Logger::INFO));
 $app = AppFactory::create();
 
 // Middleware setup
-$auth = new Auth('test', $app->getResponseFactory());
+$auth = new Auth('test', $app->getResponseFactory(), new StreamFactory());
 $auth->setLogger($logger);
 
 // If the request has no body, set the body to the contents of php://input.
