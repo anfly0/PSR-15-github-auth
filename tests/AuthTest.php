@@ -140,7 +140,7 @@ class AuthTest extends TestCase
         $this->authenticator->setLogger($this->logger);
 
         $request = $this->mockRequestFactory->createMissingHeaderRequest();
-        $result = $this->authenticator->process($request, $this->mockHandler);
+        $this->authenticator->process($request, $this->mockHandler);
 
         rewind($this->logFile);
         $logLine = stream_get_line($this->logFile, 4096);
@@ -154,7 +154,7 @@ class AuthTest extends TestCase
         $this->authenticator->setLogger($this->logger);
 
         $request = $this->mockRequestFactory->createUnauthenticRequest();
-        $result = $this->authenticator->process($request, $this->mockHandler);
+        $this->authenticator->process($request, $this->mockHandler);
 
         rewind($this->logFile);
         $logLine = stream_get_line($this->logFile, 4096);
@@ -168,7 +168,7 @@ class AuthTest extends TestCase
         $this->authenticator->setLogger($this->logger);
 
         $request = $this->mockRequestFactory->createAuthenticRequest();
-        $result = $this->authenticator->process($request, $this->mockHandler);
+        $this->authenticator->process($request, $this->mockHandler);
 
         rewind($this->logFile);
         $logLine = stream_get_line($this->logFile, 4096);
