@@ -7,6 +7,9 @@ use \Psr\Http\Message\StreamInterface;
 
 class StreamMockFactory
 {
+    /**
+     * @var Psr17Factory
+     */
     private $psr17Factory;
 
     public function __construct()
@@ -14,16 +17,21 @@ class StreamMockFactory
         $this->psr17Factory = new Psr17Factory();
     }
 
-    public function createSeekableStream()
+    public function createSeekableStream(): StreamInterface
     {
         $mock = $this->psr17Factory->createStream(GithubRequestMockFactory::BODY_DATA);
         return $mock;
     }
 
-    public function createNotSeekableStream()
+    public function createNotSeekableStream(): StreamInterface
     {
         $mock = new class () implements StreamInterface {
+            
+            /**
+             * @var StreamInterface
+             */
             private $stream;
+            
             public function __construct()
             {
                 $factory = new Psr17Factory();
@@ -60,14 +68,14 @@ class StreamMockFactory
                 return $this->stream->eof();
             }
 
-            public function isSeekable()
+            public function isSeekable(): bool
             {
                 return false;
             }
 
-            public function rewind()
+            public function rewind(): void
             {
-                return $this->stream->rewind();
+                $this->stream->rewind();
             }
 
             public function isWritable()
@@ -85,14 +93,14 @@ class StreamMockFactory
                 return $this->getContents();
             }
 
-            public function seek($offset, $whence = SEEK_SET)
+            public function seek($offset, $whence = SEEK_SET): void
             {
-                return $this->stream->seek($offset, $whence);
+                $this->stream->seek($offset, $whence);
             }
 
             public function write($string)
             {
-                return $this->stream->wirte($string);
+                return $this->stream->write($string);
             }
 
             public function read($length)
@@ -102,7 +110,7 @@ class StreamMockFactory
 
             public function getMetadata($key = null)
             {
-                $this->stream->getMetadata($key);
+                return $this->stream->getMetadata($key);
             }
         };
         return $mock;
