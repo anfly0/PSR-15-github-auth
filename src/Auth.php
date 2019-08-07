@@ -49,6 +49,9 @@ class Auth implements MiddlewareInterface, LoggerAwareInterface
      */
     private $secret;
 
+    /**
+     * @var StreamFactoryInterface
+     */
     private $streamFactory;
 
     /**
@@ -79,7 +82,7 @@ class Auth implements MiddlewareInterface, LoggerAwareInterface
         }
 
         $request = $this->getRequestWithSeekableBody($request);
-        $signature = $this->getSignature($this->secret, $request->getBody());
+        $signature = $this->getSignature($this->secret, (string) $request->getBody());
         
         if (!hash_equals($request->getHeader(self::SIGNATURE_NAME)[0], $signature)) {
             $this->logger->warning(self::LOG_MSG_SIGNATURE_NOT_MATCHING);
