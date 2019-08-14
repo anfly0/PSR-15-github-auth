@@ -103,7 +103,9 @@ class Auth implements MiddlewareInterface, LoggerAwareInterface
     {
         if (!$request->getBody()->isSeekable()) {
             $newStream = $this->streamFactory->createStreamFromFile('php://temp', 'rw');
-            $newStream->write($request->getBody()->read(4096));
+            while (!$request->getBody()->eof()) {
+                $newStream->write($request->getBody()->read(4096));
+            }
             $newStream->rewind();
             $request = $request->withBody($newStream);
         }
